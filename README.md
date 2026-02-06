@@ -8,6 +8,12 @@ Aggregates threat intel from 4 sources into one simple REST API. You send an IP/
 
 Works without API keys for testing. Add keys later for real data.
 
+## Why This Exists
+
+Instead of integrating with 4 different threat intel APIs (different auth, different response formats, different rate limits), you get one consistent API. Saves time, reduces complexity, includes smart caching to stay within free tier limits.
+
+Good for security tools, SIEM integrations, incident response, or anything that needs threat intelligence.
+
 ## Get Started
 
 ```bash
@@ -74,16 +80,8 @@ pytest tests/ -v
 
 Interactive docs at http://localhost:8000/docs after starting the server.
 
-## Why This Exists
-
-Instead of integrating with 4 different threat intel APIs (different auth, different response formats, different rate limits), you get one consistent API. Saves time, reduces complexity, includes smart caching to stay within free tier limits.
-
-Good for security tools, SIEM integrations, incident response, or anything that needs threat intelligence.
 
 ## Stack
 
 FastAPI + Redis + Docker. Python 3.11+. JWT auth. Works standalone or as a microservice.
 
-## License
-
-MIT
