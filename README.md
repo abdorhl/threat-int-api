@@ -1,159 +1,89 @@
 # Threat Intelligence API
 
-A production-ready REST API that aggregates threat intelligence from multiple sources (VirusTotal, AlienVault OTX, AbuseIPDB, Shodan) with unified risk scoring, caching, and authentication.
+One API to query multiple threat intelligence sources (VirusTotal, AlienVault OTX, AbuseIPDB, Shodan). Check IPs, domains, URLs, and file hashes. Get a unified risk score instead of juggling 4 different APIs.
 
-## Features
+## What It Does
 
-- **Multi-Source Intelligence** - VirusTotal, OTX, AbuseIPDB, Shodan
-- **Unified Risk Scoring** - Custom weighted algorithm (0-100 scale)
-- **Smart Caching** - Redis-based with configurable TTL
-- **Rate Limiting** - Per-user limits with graceful handling
-- **JWT Authentication** - Secure token-based auth
-- **Input Support** - IP, Domain, URL, File Hash (MD5/SHA1/SHA256)
+Aggregates threat intel from 4 sources into one simple REST API. You send an IP/domain/URL/hash, you get back a risk score (0-100) and detailed results. Built-in caching, authentication, and rate limiting.
 
-## Quick Start
+Works without API keys for testing. Add keys later for real data.
 
-### Docker (Recommended)
+## Get Started
 
 ```bash
-# 1. Copy environment file
-cp .env.example .env
-
-# 2. Start services
+# Start it
 docker-compose up -d
 
-# 3. Access API
-open http://localhost:8000/docs
+# Use it
+curl http://localhost:8000/docs
 ```
 
-### Manual Setup
+Default login: `admin` / `admin123`
+
+That's it. API is running on port 8000.
+
+## Example Usage
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Start Redis
-docker run -d -p 6379:6379 redis:latest
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# 4. Run API
-python -m app.main
-```
-
-## Usage
-
-### Authentication
-
-```bash
-# Login (default: admin/admin123)
+# Get a token
 curl -X POST "http://localhost:8000/auth/token" \
   -d "username=admin&password=admin123"
-```
 
-### Query Threat Intelligence
-
-```bash
-# Query IP address
+# Query an IP
 curl -X POST "http://localhost:8000/api/v1/query" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"indicator": "8.8.8.8", "indicator_type": "ip"}'
 ```
 
-## API Documentation
-
-- **Interactive Docs**: http://localhost:8000/docs
-- **API Reference**: [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
+Returns unified risk score + detailed data from all sources.
 
 ## Configuration
 
-Edit `.env` file:
+Edit `.env` file (created from `.env.example`):
 
 ```env
-# Security (REQUIRED - generate secure key!)
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=generate-a-secure-key-here
 
-# External API Keys (Optional)
+# Optional - add these to get real threat intel data
 VIRUSTOTAL_API_KEY=your_key
 OTX_API_KEY=your_key
 ABUSEIPDB_API_KEY=your_key
 SHODAN_API_KEY=your_key
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-CACHE_TTL=3600
-
-# Rate Limiting
-RATE_LIMIT_PER_MINUTE=10
 ```
 
-## Project Structure
+Generate secure key: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
 
-```
-threat-intel-api/
-├── app/
-│   ├── main.py              # Application entry point
-│   ├── api/                 # API routes
-│   ├── core/                # Core functionality
-│   ├── models/              # Data models
-│   └── services/            # External integrations
-├── tests/                   # Tests and examples
-├── docs/                    # Documentation
-├── scripts/                 # Utility scripts
-├── requirements.txt
-├── docker-compose.yml
-└── Dockerfile
-```
-
-## Risk Scoring
-
-- **Low (0-20)** - Minimal threat
-- **Medium (21-50)** - Suspicious activity
-- **High (51-75)** - Significant threat
-- **Critical (76-100)** - Confirmed malicious
-
-Algorithm uses weighted sources:
-- VirusTotal: 35%
-- OTX: 25%
-- AbuseIPDB: 25%
-- Shodan: 15%
+See [docs/API_KEYS_GUIDE.md](docs/API_KEYS_GUIDE.md) for how to get free API keys.
 
 ## Testing
 
 ```bash
-# Run tests
+# Run the test suite
 python tests/test_api.py
 
-# Run examples
-python tests/examples.py
+# Or use pytest
+pytest tests/ -v
 ```
 
-## Production Deployment
+## Documentation
 
-1. **Generate secure SECRET_KEY**
-   ```bash
-   python -c "import secrets; print(secrets.token_urlsafe(32))"
-   ```
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment guide
+- **[docs/API_KEYS_GUIDE.md](docs/API_KEYS_GUIDE.md)** - How to get API keys (free options available)
+- **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** - Full API endpoint documentation
 
-2. **Add API keys** to `.env`
+Interactive docs at http://localhost:8000/docs after starting the server.
 
-3. **Deploy with Docker**
-   ```bash
-   docker-compose up -d
-   ```
+## Why This Exists
 
-4. **Use reverse proxy** (nginx/Caddy) for HTTPS
+Instead of integrating with 4 different threat intel APIs (different auth, different response formats, different rate limits), you get one consistent API. Saves time, reduces complexity, includes smart caching to stay within free tier limits.
+
+Good for security tools, SIEM integrations, incident response, or anything that needs threat intelligence.
+
+## Stack
+
+FastAPI + Redis + Docker. Python 3.11+. JWT auth. Works standalone or as a microservice.
 
 ## License
 
-MIT License - See LICENSE file
-
-## Support
-
-- Documentation: [docs/](docs/)
-- Interactive API: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
+MIT

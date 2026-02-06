@@ -52,9 +52,35 @@ app.include_router(api_router)
 async def startup_event():
     """Initialize on startup"""
     logger.info(f"Starting {settings.API_TITLE} v{settings.API_VERSION}")
+    
+    # Security validation
+    if settings.SECRET_KEY == "your-secret-key-change-this-in-production":
+        logger.warning("⚠️  WARNING: Using default SECRET_KEY! Generate a secure key for production!")
+        logger.warning("   Generate with: python -c 'import secrets; print(secrets.token_urlsafe(32))'")
+    
+    # Initialize users
     initialize_default_users()
+    logger.info("✓ Default users initialized")
+    
+    # Check cache connectivity
     cache_stats = cache_manager.get_stats()
-    logger.info(f"Cache status: {cache_stats}")
+    if cache_stats.get("connected"):
+        logger.info(f"✓ Redis connected: {cache_stats}")
+    else:
+        logger.warning("⚠️  Redis not connected - caching will be disabled")
+    
+    # Check API keys
+    api_keys_status = {
+        "VirusTotal": bool(settings.VIRUSTOTAL_API_KEY),
+        "OTX": bool(settings.OTX_API_KEY),
+        "AbuseIPDB": bool(settings.ABUSEIPDB_API_KEY),
+        "Shodan": bool(settings.SHODAN_API_KEY)
+    }
+    configured_sources = sum(api_keys_status.values())
+    logger.info(f"✓ Threat Intel Sources: {configured_sources}/4 configured")
+    for source, configured in api_keys_status.items():
+        if not configured:
+            logger.info(f"  - {source}: Not configured (optional)")
 
 
 @app.get("/")
@@ -71,12 +97,38 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with detailed system status"""
     cache_stats = cache_manager.get_stats()
+    
+    # Check Redis connectivity
+    redis_healthy = cache_stats.get("connected", False)
+    
+    # Check configured API sources
+    api_sources = {
+        "virustotal": bool(settings.VIRUSTOTAL_API_KEY),
+        "otx": bool(settings.OTX_API_KEY),
+        "abuseipdb": bool(settings.ABUSEIPDB_API_KEY),
+        "shodan": bool(settings.SHODAN_API_KEY)
+    }
+    
+    # Overall health status
+    overall_status = "healthy" if redis_healthy else "degraded"
+    
     return {
-        "status": "healthy",
-        "cache": cache_stats,
-        "version": settings.API_VERSION
+        "status": overall_status,
+        "version": settings.API_VERSION,
+        "components": {
+            "redis": {
+                "status": "up" if redis_healthy else "down",
+                "stats": cache_stats
+            },
+            "threat_intel_sources": {
+                "configured": sum(api_sources.values()),
+                "total": len(api_sources),
+                "sources": api_sources
+            }
+        },
+        "environment": "production" if settings.SECRET_KEY != "your-secret-key-change-this-in-production" else "development"
     }
 
 

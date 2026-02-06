@@ -108,7 +108,7 @@ class CacheManager:
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
         if not self.enabled:
-            return {"enabled": False}
+            return {"enabled": False, "connected": False}
         
         try:
             info = self.redis_client.info()
@@ -116,6 +116,7 @@ class CacheManager:
             
             return {
                 "enabled": True,
+                "connected": True,
                 "total_keys": keys_count,
                 "used_memory": info.get("used_memory_human"),
                 "connected_clients": info.get("connected_clients"),
@@ -123,7 +124,7 @@ class CacheManager:
             }
         except Exception as e:
             logger.error(f"Cache stats error: {str(e)}")
-            return {"enabled": False, "error": str(e)}
+            return {"enabled": False, "connected": False, "error": str(e)}
 
 
 # Global cache instance
